@@ -1,0 +1,24 @@
+[
+    {
+        "intent": "greeting",
+        "inputs": [
+            "hello",
+            "hi"
+        ],
+        "responses": [
+            "Nice to meet you!",
+            "Glad to talk to you!"
+        ]
+    },
+    {
+        "intent": "bye",
+        "inputs": [
+            "goodbye",
+            "bye"
+        ],
+        "responses": [
+            "Bye.",
+            "See you."
+        ]
+    }
+]
