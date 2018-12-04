@@ -4,9 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <title>Chat Bot</title>
-    <script src="./jquery-3.3.1.min.js.css"></script>
-    <link rel="stylesheet" href="./bootstrap.min.css">
-    <script src="./bootstrap.min.js"></script>
+    <script src="/static/jquery-3.3.1.min.js.css"></script>
+    <link rel="stylesheet" href="/static/bootstrap.min.css">
+    <script src="/static/bootstrap.min.js"></script>
+    <script src="/static/vue.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <style>
         #chat-list {
@@ -28,14 +29,19 @@
         <a class="navbar-brand" href="#">Chat Bot</a>
     </nav>
 
-    <div class="container">
+    <div class="container" id="app">
         <div class="row">
             <div class="col-md-6 col-md-offset-3">
-                <div id="chat-list" class="list-group">
-                    <div id="item-template" class="list-group-item" style="display:none">
+                <div class="list-group" id="chat-list">
+                    <div class="list-group-item" v-for="msg in messages"
+                    :style="msg.speaker == 'user' ? userItemStyle : agentItemStyle">
                         <h4 class="list-group-item-heading">
-                            <span class="glyphicon" aria-hidden="true"></span>
-                            <span class="message">Message</span>
+                            <span v-if="msg.speaker == 'user'">{{ msg.text }}</span>
+                            <span class="glyphicon" 
+                            :class="msg.speaker == 'user' ? userIcon : agentIcon" 
+                            aria-hidden="true" 
+                            :style="msg.speaker == 'user' ? userIconStyle : agentIconStyle"></span>
+                            <span v-if="msg.speaker == 'agent'">{{ msg.text }}</span>
                         </h4>
                     </div>
                 </div>
@@ -43,14 +49,14 @@
         </div>
     </div>
 
-    <div class="navbar navbar-default navbar-fixed-bottom">
+    <div class="navbar navbar-default navbar-fixed-bottom" id="app">
         <div class="container">
             <div class="row">
                 <div class="col-md-6 col-md-offset-3">
                     <div class="input-group input-group-lg ">
                         <input id="input" type="text" class="form-control">
                         <span class="input-group-btn">
-                            <button id="send" class="btn btn-success" type="button">Send</button>
+                            <button id="send" class="btn btn-success" type="button" @click="click">Send</button>
                         </span>
                     </div>
                 </div>
@@ -58,53 +64,62 @@
         </div>
     </div>
     <script>
-        var item_id = 0
-        sendAjax("[begin]")
-        function addChatItem(speaker, message) {
-            var item = $("#item-template").clone()
-            item_id += 1
-            item.attr("id", item_id)
-            var speaker_icon, text_align
-            if (speaker == "user") {
-                item.css("text-align", "right")
-                item.find(".glyphicon").addClass("glyphicon-user")
-                item.find(".glyphicon").css("margin-left", "10px")
-                item.find("span.glyphicon").before(item.find("span.message"))
-            } else {
-                item.css("text-align", "left")
-                item.find(".glyphicon").addClass("glyphicon-cloud")
-                item.find(".glyphicon").css("margin-right", "10px")
-            }
-            item.find("span.message").html(message)
-            item.css("display", "")
-            $("#chat-list").append(item)
-        }
-        function sendAjax(question) {
-            $.ajax({
-                type: "POST",
-                url: "/chat",
-                data: JSON.stringify({ "text": question }),
-                contentType: "application/json; charset=utf-8",
-                dataType: "json",
-                success: function (data) {
-                    $("#input").val("")
-                    addChatItem("agent", data["text"])
+        var app = new Vue({
+            el: "#app",
+            data: {
+                messages: [],
+                userIcon: 'glyphicon-user',
+                agentIcon: 'glyphicon-cloud',
+                userIconStyle: {
+                    'margin-left': '10px',
+                    'margin-right': '0px'
                 },
-                failure: function (error) {
-                    alert(error);
+                agentIconStyle: {
+                    'margin-left': '0px',
+                    'margin-right': '10px'
+                },
+                userItemStyle: {
+                    'text-align': 'right'
+                },
+                agentItemStyle: {
+                    'text-align': 'left'
                 }
-            })
-        }
-        function sendMessage() {
-            var question = $("#input").val()
-            if (question === "") return
-            addChatItem("user", question)
-            sendAjax(question)
-        }
-        $("#input").keypress(function (key) {
-            if (key.which == 13) sendMessage()
+            },
+            methods: {
+                click: function() {
+                    var query = $('#input').val()
+                    if (query == '') return
+                    this.messages.push({
+                        speaker: 'user',
+                        text: query
+                    })
+                    this.sendAjax({text: query})
+                },
+                sendAjax: function(message) {
+                    $.ajax({
+                        url: "/chat",
+                        type: "POST",
+                        contentType: "application/json; charset=utf-8",
+                        data: JSON.stringify(message),
+                        dataType: "json",
+                        success: function (data) {
+                            $("#input").val("")
+                            app.messages.push({
+                                speaker: 'agent',
+                                text: data["text"]
+                            })
+                        },
+                        failure: function (error) {
+                            alert(error);
+                        }
+                    })
+                }
+            }
         })
-        $("#send").click(sendMessage)
+        $("#input").keypress(function (key) {
+            if (key.which == 13) app.click()
+        })
+        app.sendAjax({text: '[begin]'})
     </script>
 </body>
 

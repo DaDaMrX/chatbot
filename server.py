@@ -1,5 +1,5 @@
-import json
 import bottle
+import json
 
 from chatbot import Chatbot
 
@@ -13,11 +13,11 @@ class Server(bottle.Bottle):
         self.route('/chat', method='POST', callback=self.chat)
         self.route('/<path:path>', method='GET', callback=self.static)
 
-    def static(self, path):
-        return bottle.static_file(path, './static')
-
     def index(self):
-        return bottle.template('index.html')
+        return bottle.static_file('index.html', root='./')
+
+    def static(self, path):
+        return bottle.static_file(path, root='./')
 
     def chat(self):
         data = bottle.request.json
@@ -26,4 +26,4 @@ class Server(bottle.Bottle):
 
 
 if __name__ == '__main__':
-    Server().run(host='127.0.0.1', port=8080)
+    Server().run(host='127.0.0.1', port=8080, debug=True)
